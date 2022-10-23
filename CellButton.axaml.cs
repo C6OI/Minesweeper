@@ -188,7 +188,7 @@ public partial class CellButton : UserControl {
     }
 
     void CheckForWin() {
-        if (Math.Abs(Window.MinesCount - Window.FlaggedCells) == 0 && Window.ClearCells.All(c => c.IsOpened))
+        if (Window.MinesCount == Window.FlaggedCells && Window.ClearCells.All(c => c.IsOpened))
             Window.FinishGame(false);
     }
 

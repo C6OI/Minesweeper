@@ -28,7 +28,7 @@ public partial class CustomGame : Window {
 }
 
 public struct Field {
-    public int Height { get; set; }
-    public int Width { get; set; }
-    public int Mines { get; set; }
+    public int Height { get; init; }
+    public int Width { get; init; }
+    public int Mines { get; init; }
 }
