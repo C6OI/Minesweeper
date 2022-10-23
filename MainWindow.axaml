@@ -1,0 +1,165 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="360"
+        d:DesignHeight="480"
+        x:Class="Minesweeper.MainWindow"
+        Title="Minesweeper"
+        SizeToContent="WidthAndHeight"
+        CanResize="False">
+
+    <Grid RowDefinitions="Auto, Auto, *">
+
+        <Menu Grid.Row="0">
+
+            <MenuItem Header="Игра">
+
+                <MenuItem Name="NewGame"
+                          Header="Новая игра"/>
+
+                <Separator/>
+
+                <MenuItem Name="Beginner"
+                          Header="Новичок"/>
+
+                <MenuItem Name="Amateur"
+                          Header="Любитель"/>
+
+                <MenuItem Name="Professional"
+                          Header="Профессионал"/>
+
+                <MenuItem Name="Custom"
+                          Header="Особые..."/>
+
+                <Separator/>
+
+                <MenuItem Name="Tags"
+                          Header="Метки (?)">
+
+                    <MenuItem.Icon>
+
+                        <CheckBox Name="TagsEnabled"
+                                  IsEnabled="False"
+                                  IsChecked="True"/>
+
+                    </MenuItem.Icon>
+
+                </MenuItem>
+
+                <MenuItem Name="Sound"
+                          Header="Звук"
+                          ToolTip.Tip="звуков нет">
+
+                    <MenuItem.Icon>
+
+                        <CheckBox Name="SoundEnabled"
+                                  IsEnabled="False"/>
+
+                    </MenuItem.Icon>
+
+                </MenuItem>
+                
+                <Separator/>
+                
+                <MenuItem Name="AutoFlags"
+                          Header="Флажки"
+                          ToolTip.Tip="По нажатию на СКМ автоматически ставить флажки на соседние клетки, если количество мин рядом с нажатой клеткой такое же, как и количество неоткрытых клеток рядом с нажатой клеткой"
+                          ToolTip.ShowDelay="100">
+
+                    <MenuItem.Icon>
+
+                        <CheckBox Name="AutoFlagsEnabled"
+                                  IsEnabled="False"/>
+
+                    </MenuItem.Icon>
+
+                </MenuItem>
+                
+                <MenuItem Name="AutoOpen"
+                          Header="Открытие"
+                          ToolTip.Tip="По нажатию на СКМ автоматически открывать соседние клетки, если количество мин рядом с нажатой клеткой такое же, как и количество флажков рядом с нажатой клеткой"
+                          ToolTip.ShowDelay="100">
+
+                    <MenuItem.Icon>
+
+                        <CheckBox Name="AutoOpenEnabled"
+                                  IsEnabled="False"
+                                  IsChecked="True"/>
+
+                    </MenuItem.Icon>
+
+                </MenuItem>
+
+                <Separator/>
+
+                <MenuItem Header="Чемпионы..."/>
+
+                <Separator/>  
+
+                <MenuItem Name="Exit"
+                          Header="Выход"
+                          HotKey="Alt+F4"
+                          InputGesture="Alt+F4"/>
+
+            </MenuItem>
+
+            <MenuItem Header="Справка">
+
+                <MenuItem Name="FAQ"
+                          Header="Вызов справки"
+                          HotKey="F1"
+                          InputGesture="F1"/>
+
+                <Separator/>
+
+                <MenuItem Name="About"
+                          Header="О программе..."/>
+
+            </MenuItem>
+
+        </Menu>
+
+        <Separator Grid.Row="0"
+                   VerticalAlignment="Bottom"
+                   Height="1"
+                   Background="#505050"/>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    Spacing="7"
+                    HorizontalAlignment="Center">
+            
+            <TextBlock Text="Mines:"
+                       FontSize="32"/>
+
+            <TextBlock Name="Mines"
+                       FontSize="32"/>
+
+            <Separator Background="#505050"
+                       Width="1"/>
+
+            <TextBlock Text="Time:"
+                       FontSize="32"/>
+
+            <TextBlock Name="Time"
+                       FontSize="32"
+                       Text="00:00"/>
+
+        </StackPanel>
+
+        <Separator Grid.Row="1"
+                   Background="#505050"
+                   Height="1"
+                   VerticalAlignment="Bottom"/>
+
+        <StackPanel Grid.Row="2"
+                    Name="MinesField"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0, 10"/>
+
+    </Grid>
+
+</Window>
