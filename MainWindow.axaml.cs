@@ -11,11 +11,13 @@ namespace Minesweeper;
 public partial class MainWindow : Window {
     public readonly List<StackPanel> CellColumns = new();
     public readonly Stopwatch Stopwatch = new();
+    public readonly DiscordRPCManager DiscordManager;
+    public DateTimeOffset StartTime;
     public int FieldHeight;
     public int FieldWidth;
     public int MinesCount;
-    public int FlaggedCells;
-    public int Questions;
+    public int FlaggedCount;
+    public int QuestionsCount;
     public bool GameStarted;
     public bool GameOver;
     public List<CellButton> AllCells = new();
@@ -23,7 +25,12 @@ public partial class MainWindow : Window {
     public List<CellButton> ClearCells = new();
     public GameMode GameMode = GameMode.Beginner;
 
+    public int MinesRemaining => MinesCount - FlaggedCount;
+
     public MainWindow() {
+        DiscordManager = new DiscordRPCManager(this);
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => DiscordManager.Dispose();
+
         StartGame();
 
         InitializeComponent();
@@ -75,22 +82,25 @@ public partial class MainWindow : Window {
     }
 
     void StartGame() {
+        DiscordManager.SetActivity("Starting the game...", $"{GameMode}", smallImage: Assets.waiting);
+        
+        // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
         switch (GameMode) {
             case GameMode.Beginner:
-                FieldHeight = 9;
                 FieldWidth = 9;
+                FieldHeight = 9;
                 MinesCount = 10;
                 break;
 
             case GameMode.Amateur:
-                FieldHeight = 16;
                 FieldWidth = 16;
+                FieldHeight = 16;
                 MinesCount = 40;
                 break;
 
             case GameMode.Professional:
-                FieldHeight = 16;
                 FieldWidth = 30;
+                FieldHeight = 16;
                 MinesCount = 99;
                 break;
         }
@@ -102,8 +112,8 @@ public partial class MainWindow : Window {
         MineCells = new List<CellButton>(MinesCount);
         MinesField?.Children?.Clear();
         CellColumns.Clear();
-        FlaggedCells = 0;
-        Questions = 0;
+        FlaggedCount = 0;
+        QuestionsCount = 0;
         GameStarted = false;
         GameOver = false;
 
@@ -124,9 +134,13 @@ public partial class MainWindow : Window {
         MinesField?.Children?.AddRange(CellColumns);
         
         PlaceMines();
+        
+        DiscordManager.SetActivity("Getting ready", $"{GameMode}", smallImage: Assets.waiting);
     }
 
     public void PlaceMines(short? count = null, short? ignoredX = null, short? ignoredY = null) {
+        DiscordManager.SetActivity("Placing mines...", $"{GameMode}", smallImage: Assets.waiting);
+    
         short placedMines = 0;
         short mines = count ?? 0;
 
@@ -156,14 +170,21 @@ public partial class MainWindow : Window {
     }
 
     public void FinishGame(bool lose) {
+        DateTimeOffset stopTime = DateTimeOffset.Now;
         GameOver = true;
         StopTime();
-        
-        if (lose) MineCells.ForEach(c => c.Open(true));
+
+        if (lose) {
+            MineCells.ForEach(c => c.Open(lose));
+            DiscordManager.SetActivity("Lost the game", $"{GameMode}", StartTime, stopTime, Assets.lose_game);
+        } else {
+            DiscordManager.SetActivity("Win the game", $"{GameMode}", StartTime, stopTime, Assets.win_game);
+        }
     }
 
     public void RestartTime() {
         Stopwatch.Restart();
+        StartTime = DateTimeOffset.Now;
 
         DispatcherTimer.Run(() => {
             if (!Stopwatch.IsRunning) return false;

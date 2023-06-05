@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -67,13 +66,13 @@ public partial class CellButton : UserControl {
 
             if (!IsPointerOver || !IsOpened) return;
 
-            if ((Window.AutoOpenEnabled.IsChecked ?? false) && Neighbours.Count(c => c.State == CellState.Flagged) ==
-                Neighbours.Count(c => c.IsMine))
+            if ((Window.AutoOpenEnabled.IsChecked ?? false) && 
+                Neighbours.Count(c => c.IsFlagged) == Neighbours.Count(c => c.IsMine))
                 Neighbours.ForEach(c => c.Open());
 
             if ((Window.AutoFlagsEnabled.IsChecked ?? false) &&
                 Neighbours.Count(c => !c.IsOpened) == Neighbours.Count(c => c.IsMine))
-                Neighbours.Where(c => !c.IsOpened && c.IsMine).ToList().ForEach(c => c.SetFlagged());
+                Neighbours.Where(c => c is { IsOpened: false, IsMine: true }).ToList().ForEach(c => c.SetFlagged());
         };
 
         Cell.PointerEnter += (_, e) => {
@@ -86,7 +85,7 @@ public partial class CellButton : UserControl {
     void HighlightNeighbours() =>
         Neighbours.Where(c => !c.IsOpened)
                   .ToList()
-                  .ForEach(c => c.Cell.BorderThickness = new Thickness(10));
+                  .ForEach(c => c.Cell.BorderThickness = new Thickness(8));
 
     void LowlightNeighbours() =>
         Neighbours.Where(c => !c.IsOpened)
@@ -101,17 +100,19 @@ public partial class CellButton : UserControl {
             Window.RestartTime();
         }
 
-        if (State == CellState.Flagged) return;
+        if (IsFlagged) return;
 
-        if (Window.FlaggedCells >= Window.MinesCount)
+        if (Window.FlaggedCount >= Window.MinesCount)
             if (Window.TagsEnabled.IsChecked ?? false) {
                 SetQuestioned();
                 return;
             } else return;
 
         State = CellState.Flagged;
-        Window.FlaggedCells++;
-        Window.Mines.Text = $"{Window.MinesCount - Window.FlaggedCells}";
+        Window.FlaggedCount++;
+        Window.Mines.Text = $"{Window.MinesRemaining}";
+        
+        Window.DiscordManager.SetActivity(Window.GameMode, $"{Window.MinesRemaining}/{Window.MinesCount} mines left", Window.StartTime);
         
         CheckForWin();
     }
@@ -124,31 +125,35 @@ public partial class CellButton : UserControl {
             Window.RestartTime();
         }
 
-        if (State == CellState.Question) return;
+        if (IsQuestioned) return;
 
         State = CellState.Question;
-        Window.Questions++;
-        Window.FlaggedCells--;
-        Window.Mines.Text = $"{Window.MinesCount - Window.FlaggedCells}";
+        Window.QuestionsCount++;
+        Window.FlaggedCount--;
+        Window.Mines.Text = $"{Window.MinesRemaining}";
+        
+        Window.DiscordManager.SetActivity(Window.GameMode, $"{Window.MinesRemaining}/{Window.MinesCount} mines left", Window.StartTime);
         
         CheckForWin();
     }
 
     void SetClosed() {
-        if (State == CellState.Closed || Window.GameOver) return;
+        if (IsClosed || Window.GameOver) return;
 
         State = CellState.Closed;
-        Window.Questions--;
-        Window.Mines.Text = $"{Window.MinesCount - Window.FlaggedCells}";
+        Window.QuestionsCount--;
+        Window.Mines.Text = $"{Window.MinesRemaining}";
+        
+        Window.DiscordManager.SetActivity(Window.GameMode, $"{Window.MinesRemaining}/{Window.MinesCount} mines left", Window.StartTime);
         
         CheckForWin();
     }
 
     public void Open(bool lose = false) {
-        if (IsOpened || State == CellState.Flagged || (Window.GameOver && !lose)) return;
+        if (IsOpened || IsFlagged || (Window.GameOver && !lose)) return;
 
         if (!Window.GameStarted) {
-            if (Type != CellType.Regular) {
+            if (IsMine) {
                 Type = CellType.Regular;
                 Window.MineCells.Remove(this);
                 Window.PlaceMines(1, X, Y);
@@ -171,7 +176,7 @@ public partial class CellButton : UserControl {
             BackColor = Brushes.DimGray;
             int neighbourMines = Neighbours.Count(c => c.IsMine);
 
-            Neighbours.Where(c => !c.HasMineNeighbours && !c.IsMine)
+            Neighbours.Where(c => c is { HasMineNeighbours: false, IsMine: false })
                       .ToList()
                       .ForEach(c => c.Open());
 
@@ -183,13 +188,19 @@ public partial class CellButton : UserControl {
                 Neighbours.ForEach(c => c.Open());
             }
         }
-        
+
+        if (Window.GameOver) return;
+
+        Window.DiscordManager.SetActivity(Window.GameMode, $"{Window.MinesRemaining}/{Window.MinesCount} mines left", Window.StartTime);
         CheckForWin();
     }
 
     void CheckForWin() {
-        if (Window.MinesCount == Window.FlaggedCells && Window.ClearCells.All(c => c.IsOpened))
-            Window.FinishGame(false);
+        if (Window.MinesCount != Window.FlaggedCount || !Window.MineCells.All(c => c.IsFlagged) && !Window.ClearCells.All(c => c.IsOpened)) 
+            return;
+
+        Window.ClearCells.ForEach(c => c.Open());
+        Window.FinishGame(false);
     }
 
     public short X { get; init; }
@@ -198,6 +209,12 @@ public partial class CellButton : UserControl {
 
     public bool IsOpened => State == CellState.Opened;
 
+    public bool IsFlagged => State == CellState.Flagged;
+
+    public bool IsQuestioned => State == CellState.Question;
+
+    public bool IsClosed => State == CellState.Closed;
+    
     public bool IsMine => Type == CellType.Mine;
 
     public bool HasMineNeighbours => Neighbours.Any(c => c.IsMine);
